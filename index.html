@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rundholz Datenbank - Schnitthölzer & Furnier</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            background: white;
+            border: 1px solid #ddd;
+            padding: 30px;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+
+        .input-section {
+            background: #fafafa;
+            padding: 25px;
+            border: 1px solid #ddd;
+            margin-bottom: 30px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #555;
+            font-size: 0.9em;
+        }
+
+        input, select {
+            padding: 10px;
+            border: 1px solid #ccc;
+            font-size: 1em;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #666;
+        }
+
+        input[readonly] {
+            background-color: #f0f0f0;
+            cursor: not-allowed;
+        }
+
+        .calculated-field {
+            background-color: #f9f9f9 !important;
+            font-weight: 600;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: 1px solid #999;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 5px;
+            background: #fff;
+        }
+
+        .btn-primary {
+            background: #333;
+            color: white;
+            border-color: #333;
+        }
+
+        .btn-primary:hover {
+            background: #555;
+        }
+
+        .btn-secondary {
+            background: #999;
+            color: white;
+            border-color: #999;
+        }
+
+        .btn-secondary:hover {
+            background: #777;
+        }
+
+        .button-group {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .entries-section {
+            margin-bottom: 30px;
+        }
+
+        .entries-section h2 {
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #999;
+        }
+
+        .entry-card {
+            background: white;
+            border: 1px solid #ccc;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .entry-card:hover {
+            background: #fafafa;
+        }
+
+        .entry-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .entry-title {
+            font-size: 1.2em;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .entry-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+        }
+
+        .entry-detail {
+            font-size: 0.9em;
+        }
+
+        .entry-detail strong {
+            color: #666;
+        }
+
+        .summary-section {
+            background: #e8e8e8;
+            color: #333;
+            padding: 25px;
+            border: 1px solid #ccc;
+        }
+
+        .summary-section h2 {
+            margin-bottom: 20px;
+            font-size: 2em;
+            color: #333;
+        }
+
+        .summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            background: white;
+            border: 1px solid #ccc;
+        }
+
+        .summary-table th {
+            background: #666;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            border: 1px solid #999;
+        }
+
+        .summary-table td {
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            color: #333;
+        }
+
+        .summary-table tr:last-child td {
+            border-bottom: 1px solid #ddd;
+        }
+
+        .summary-table tr:hover {
+            background-color: #fafafa;
+        }
+
+        .totals {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .total-card {
+            background: white;
+            padding: 20px;
+            border: 1px solid #ccc;
+            text-align: center;
+        }
+
+        .total-label {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+
+        .total-value {
+            color: #333;
+            font-size: 2em;
+            font-weight: 700;
+        }
+
+        .btn-delete {
+            background: #666;
+            color: white;
+            padding: 5px 15px;
+            border: 1px solid #666;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+
+        .btn-delete:hover {
+            background: #444;
+        }
+
+        .required {
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Rundholz Datenbank</h1>
+
+        <div class="input-section">
+            <h2 style="margin-bottom: 20px; color: #333;">Neuer Eintrag</h2>
+            <form id="entryForm">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="stammnummer">Stammnummer <span class="required">*</span></label>
+                        <input type="text" id="stammnummer" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="paketnummer">Paketnummer</label>
+                        <input type="text" id="paketnummer">
+                    </div>
+                    <div class="form-group">
+                        <label for="saeger">Säger</label>
+                        <input type="text" id="saeger">
+                    </div>
+                    <div class="form-group">
+                        <label for="holzart">Holzart</label>
+                        <select id="holzart">
+                            <option value="">-- Auswählen --</option>
+                            <option value="Eiche">Eiche</option>
+                            <option value="Buche">Buche</option>
+                            <option value="Ahorn">Ahorn</option>
+                            <option value="Esche">Esche</option>
+                            <option value="Kirschbaum">Kirschbaum</option>
+                            <option value="Nussbaum">Nussbaum</option>
+                            <option value="Birke">Birke</option>
+                            <option value="Fichte">Fichte</option>
+                            <option value="Tanne">Tanne</option>
+                            <option value="Kiefer">Kiefer</option>
+                            <option value="Lärche">Lärche</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="kategorie">Kategorie</label>
+                        <select id="kategorie">
+                            <option value="">-- Auswählen --</option>
+                            <option value="Schnittholz">Schnittholz</option>
+                            <option value="Furnier">Furnier</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="qualitaet">Qualität</label>
+                        <select id="qualitaet">
+                            <option value="">-- Auswählen --</option>
+                            <option value="A">A</option>
+                            <option value="B">B</option>
+                            <option value="C">C</option>
+                            <option value="AB">AB</option>
+                            <option value="BC">BC</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="staerke">Stärke (mm)</label>
+                        <input type="number" id="staerke" step="0.1" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="laenge">Länge (m)</label>
+                        <input type="number" id="laenge" step="0.01" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="breite">Breite (m)</label>
+                        <input type="number" id="breite" step="0.01" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="quadratmeter">Quadratmeter (m²)</label>
+                        <input type="text" id="quadratmeter" readonly class="calculated-field" value="0.00">
+                    </div>
+                    <div class="form-group">
+                        <label for="kubikmeter">Kubikmeter (m³)</label>
+                        <input type="text" id="kubikmeter" readonly class="calculated-field" value="0.000">
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button type="submit" class="btn btn-primary">✓ Holz hinzufügen</button>
+                    <button type="button" class="btn btn-secondary" onclick="neuerStamm()">🔄 Neuer Stamm</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="entries-section" id="entriesSection" style="display: none;">
+            <h2>📋 Eingetragene Hölzer</h2>
+            <div id="entriesList"></div>
+        </div>
+
+        <div class="summary-section" id="summarySection" style="display: none;">
+            <h2>📊 Zusammenfassung</h2>
+            <div style="overflow-x: auto;">
+                <table class="summary-table">
+                    <thead>
+                        <tr>
+                            <th>Stamm</th>
+                            <th>Holzart</th>
+                            <th>Kategorie</th>
+                            <th>Qualität</th>
+                            <th>Lieferant</th>
+                            <th>Durchmesser</th>
+                            <th>Länge</th>
+                            <th>Kubikmeter</th>
+                            <th>Durchm. neu</th>
+                            <th>Länge neu</th>
+                            <th>Kubikm. neu</th>
+                            <th>Zusatz</th>
+                        </tr>
+                    </thead>
+                    <tbody id="summaryTableBody"></tbody>
+                </table>
+            </div>
+
+            <div class="totals">
+                <div class="total-card">
+                    <div class="total-label">Gesamt Kubikmeter</div>
+                    <div class="total-value" id="totalKubikmeter">0.000</div>
+                </div>
+                <div class="total-card">
+                    <div class="total-label">Gesamt Quadratmeter</div>
+                    <div class="total-value" id="totalQuadratmeter">0.00</div>
+                </div>
+                <div class="total-card">
+                    <div class="total-label">Anzahl Hölzer</div>
+                    <div class="total-value" id="totalStueck">0</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let entries = [];
+
+        // Berechnung von Quadrat- und Kubikmetern
+        function calculateValues() {
+            const laenge = parseFloat(document.getElementById('laenge').value) || 0;
+            const breite = parseFloat(document.getElementById('breite').value) || 0;
+            const staerke = parseFloat(document.getElementById('staerke').value) || 0;
+
+            // Quadratmeter = Länge × Breite
+            const quadratmeter = laenge * breite;
+            document.getElementById('quadratmeter').value = quadratmeter.toFixed(2);
+
+            // Kubikmeter = Länge × Breite × Stärke (Stärke von mm in m umrechnen)
+            const kubikmeter = laenge * breite * (staerke / 1000);
+            document.getElementById('kubikmeter').value = kubikmeter.toFixed(3);
+        }
+
+        // Event Listener für Berechnungen
+        document.getElementById('laenge').addEventListener('input', calculateValues);
+        document.getElementById('breite').addEventListener('input', calculateValues);
+        document.getElementById('staerke').addEventListener('input', calculateValues);
+
+        // Formular abschicken
+        document.getElementById('entryForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const entry = {
+                id: Date.now(),
+                stammnummer: document.getElementById('stammnummer').value,
+                paketnummer: document.getElementById('paketnummer').value,
+                saeger: document.getElementById('saeger').value,
+                holzart: document.getElementById('holzart').value,
+                kategorie: document.getElementById('kategorie').value,
+                qualitaet: document.getElementById('qualitaet').value,
+                staerke: document.getElementById('staerke').value,
+                laenge: document.getElementById('laenge').value,
+                breite: document.getElementById('breite').value,
+                quadratmeter: document.getElementById('quadratmeter').value,
+                kubikmeter: document.getElementById('kubikmeter').value
+            };
+
+            entries.push(entry);
+            displayEntries();
+            updateSummary();
+            
+            // Formular zurücksetzen aber Stammnummer behalten
+            const stammnummer = document.getElementById('stammnummer').value;
+            document.getElementById('entryForm').reset();
+            document.getElementById('stammnummer').value = stammnummer;
+            document.getElementById('quadratmeter').value = '0.00';
+            document.getElementById('kubikmeter').value = '0.000';
+            document.getElementById('paketnummer').focus();
+        });
+
+        // Neuer Stamm - Formular zurücksetzen
+        function neuerStamm() {
+            const stammnummer = document.getElementById('stammnummer').value;
+            document.getElementById('entryForm').reset();
+            document.getElementById('stammnummer').value = stammnummer; // Stammnummer beibehalten
+            document.getElementById('quadratmeter').value = '0.00';
+            document.getElementById('kubikmeter').value = '0.000';
+            document.getElementById('paketnummer').focus();
+        }
+
+        // Einträge anzeigen
+        function displayEntries() {
+            const entriesList = document.getElementById('entriesList');
+            const entriesSection = document.getElementById('entriesSection');
+
+            if (entries.length === 0) {
+                entriesSection.style.display = 'none';
+                return;
+            }
+
+            entriesSection.style.display = 'block';
+            entriesList.innerHTML = '';
+
+            entries.forEach(entry => {
+                const card = document.createElement('div');
+                card.className = 'entry-card';
+                card.innerHTML = `
+                    <div class="entry-header">
+                        <div class="entry-title">Stamm: ${entry.stammnummer || 'N/A'}</div>
+                        <button class="btn-delete" onclick="deleteEntry(${entry.id})">🗑️ Löschen</button>
+                    </div>
+                    <div class="entry-details">
+                        <div class="entry-detail"><strong>Paketnummer:</strong> ${entry.paketnummer || '-'}</div>
+                        <div class="entry-detail"><strong>Säger:</strong> ${entry.saeger || '-'}</div>
+                        <div class="entry-detail"><strong>Holzart:</strong> ${entry.holzart || '-'}</div>
+                        <div class="entry-detail"><strong>Kategorie:</strong> ${entry.kategorie || '-'}</div>
+                        <div class="entry-detail"><strong>Qualität:</strong> ${entry.qualitaet || '-'}</div>
+                        <div class="entry-detail"><strong>Stärke:</strong> ${entry.staerke ? entry.staerke + ' mm' : '-'}</div>
+                        <div class="entry-detail"><strong>Länge:</strong> ${entry.laenge ? entry.laenge + ' m' : '-'}</div>
+                        <div class="entry-detail"><strong>Breite:</strong> ${entry.breite ? entry.breite + ' m' : '-'}</div>
+                        <div class="entry-detail"><strong>Quadratmeter:</strong> ${entry.quadratmeter} m²</div>
+                        <div class="entry-detail"><strong>Kubikmeter:</strong> ${entry.kubikmeter} m³</div>
+                    </div>
+                `;
+                entriesList.appendChild(card);
+            });
+        }
+
+        // Eintrag löschen
+        function deleteEntry(id) {
+            if (confirm('Möchten Sie diesen Eintrag wirklich löschen?')) {
+                entries = entries.filter(entry => entry.id !== id);
+                displayEntries();
+                updateSummary();
+            }
+        }
+
+        // Zusammenfassung aktualisieren
+        function updateSummary() {
+            const summarySection = document.getElementById('summarySection');
+            const summaryTableBody = document.getElementById('summaryTableBody');
+
+            if (entries.length === 0) {
+                summarySection.style.display = 'none';
+                return;
+            }
+
+            summarySection.style.display = 'block';
+            summaryTableBody.innerHTML = '';
+
+            let totalKubik = 0;
+            let totalQuadrat = 0;
+
+            entries.forEach(entry => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${entry.stammnummer || '-'}</td>
+                    <td>${entry.holzart || '-'}</td>
+                    <td>${entry.kategorie || '-'}</td>
+                    <td>${entry.qualitaet || '-'}</td>
+                    <td>${entry.saeger || '-'}</td>
+                    <td>-</td>
+                    <td>${entry.laenge ? entry.laenge + ' m' : '-'}</td>
+                    <td>${entry.kubikmeter} m³</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                `;
+                summaryTableBody.appendChild(row);
+
+                totalKubik += parseFloat(entry.kubikmeter) || 0;
+                totalQuadrat += parseFloat(entry.quadratmeter) || 0;
+            });
+
+            document.getElementById('totalKubikmeter').textContent = totalKubik.toFixed(3) + ' m³';
+            document.getElementById('totalQuadratmeter').textContent = totalQuadrat.toFixed(2) + ' m²';
+            document.getElementById('totalStueck').textContent = entries.length;
+        }
+
+        // Initial focus
+        document.getElementById('stammnummer').focus();
+    </script>
+</body>
+</html>
