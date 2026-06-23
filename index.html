@@ -268,12 +268,24 @@
                         <input type="text" id="stammnummer" required>
                     </div>
                     <div class="form-group">
+                        <label for="datumVon">Zeitraum Von</label>
+                        <input type="date" id="datumVon">
+                    </div>
+                    <div class="form-group">
+                        <label for="datumBis">Zeitraum Bis</label>
+                        <input type="date" id="datumBis">
+                    </div>
+                    <div class="form-group">
                         <label for="paketnummer">Paketnummer</label>
                         <input type="text" id="paketnummer">
                     </div>
                     <div class="form-group">
                         <label for="saeger">Säger</label>
-                        <input type="text" id="saeger">
+                        <select id="saeger">
+                            <option value="">-- Auswählen --</option>
+                            <option value="MB">MB</option>
+                            <option value="VIO">VIO</option>
+                        </select>
                     </div>
                     <div class="form-group">
                         <label for="holzart">Holzart</label>
@@ -296,8 +308,11 @@
                         <label for="kategorie">Kategorie</label>
                         <select id="kategorie">
                             <option value="">-- Auswählen --</option>
-                            <option value="Schnittholz">Schnittholz</option>
-                            <option value="Furnier">Furnier</option>
+                            <option value="SF">SF</option>
+                            <option value="SH">SH</option>
+                            <option value="MF">MF</option>
+                            <option value="KA">KA</option>
+                            <option value="X">X</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -305,10 +320,11 @@
                         <select id="qualitaet">
                             <option value="">-- Auswählen --</option>
                             <option value="A">A</option>
-                            <option value="B">B</option>
-                            <option value="C">C</option>
                             <option value="AB">AB</option>
-                            <option value="BC">BC</option>
+                            <option value="B">B</option>
+                            <option value="R">R</option>
+                            <option value="GGZ">GGZ</option>
+                            <option value="X">X</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -320,8 +336,12 @@
                         <input type="number" id="laenge" step="0.01" min="0">
                     </div>
                     <div class="form-group">
-                        <label for="breite">Breite (m)</label>
-                        <input type="number" id="breite" step="0.01" min="0">
+                        <label for="breite">Breite (cm)</label>
+                        <input type="number" id="breite" step="0.1" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="stueck">Stück</label>
+                        <input type="number" id="stueck" step="1" min="0" value="1">
                     </div>
                     <div class="form-group">
                         <label for="quadratmeter">Quadratmeter (m²)</label>
@@ -392,15 +412,19 @@
         // Berechnung von Quadrat- und Kubikmetern
         function calculateValues() {
             const laenge = parseFloat(document.getElementById('laenge').value) || 0;
-            const breite = parseFloat(document.getElementById('breite').value) || 0;
-            const staerke = parseFloat(document.getElementById('staerke').value) || 0;
+            const breite = parseFloat(document.getElementById('breite').value) || 0; // in cm
+            const staerke = parseFloat(document.getElementById('staerke').value) || 0; // in mm
+            const stueck = parseFloat(document.getElementById('stueck').value) || 1;
 
-            // Quadratmeter = Länge × Breite
-            const quadratmeter = laenge * breite;
+            // Breite von cm in m umrechnen
+            const breiteInM = breite / 100;
+
+            // Quadratmeter = Länge × Breite × Stück
+            const quadratmeter = laenge * breiteInM * stueck;
             document.getElementById('quadratmeter').value = quadratmeter.toFixed(2);
 
-            // Kubikmeter = Länge × Breite × Stärke (Stärke von mm in m umrechnen)
-            const kubikmeter = laenge * breite * (staerke / 1000);
+            // Kubikmeter = Länge × Breite × Stärke × Stück (Stärke von mm in m, Breite von cm in m umrechnen)
+            const kubikmeter = laenge * breiteInM * (staerke / 1000) * stueck;
             document.getElementById('kubikmeter').value = kubikmeter.toFixed(3);
         }
 
@@ -408,6 +432,7 @@
         document.getElementById('laenge').addEventListener('input', calculateValues);
         document.getElementById('breite').addEventListener('input', calculateValues);
         document.getElementById('staerke').addEventListener('input', calculateValues);
+        document.getElementById('stueck').addEventListener('input', calculateValues);
 
         // Formular abschicken
         document.getElementById('entryForm').addEventListener('submit', function(e) {
@@ -416,6 +441,8 @@
             const entry = {
                 id: Date.now(),
                 stammnummer: document.getElementById('stammnummer').value,
+                datumVon: document.getElementById('datumVon').value,
+                datumBis: document.getElementById('datumBis').value,
                 paketnummer: document.getElementById('paketnummer').value,
                 saeger: document.getElementById('saeger').value,
                 holzart: document.getElementById('holzart').value,
@@ -424,6 +451,7 @@
                 staerke: document.getElementById('staerke').value,
                 laenge: document.getElementById('laenge').value,
                 breite: document.getElementById('breite').value,
+                stueck: document.getElementById('stueck').value,
                 quadratmeter: document.getElementById('quadratmeter').value,
                 kubikmeter: document.getElementById('kubikmeter').value
             };
@@ -432,23 +460,48 @@
             displayEntries();
             updateSummary();
             
-            // Formular zurücksetzen aber Stammnummer behalten
+            // Formular zurücksetzen aber Felder bis Breite beibehalten
             const stammnummer = document.getElementById('stammnummer').value;
+            const datumVon = document.getElementById('datumVon').value;
+            const datumBis = document.getElementById('datumBis').value;
+            const paketnummer = document.getElementById('paketnummer').value;
+            const saeger = document.getElementById('saeger').value;
+            const holzart = document.getElementById('holzart').value;
+            const kategorie = document.getElementById('kategorie').value;
+            const qualitaet = document.getElementById('qualitaet').value;
+            const staerke = document.getElementById('staerke').value;
+            const laenge = document.getElementById('laenge').value;
+            const breite = document.getElementById('breite').value;
+            
             document.getElementById('entryForm').reset();
+            
             document.getElementById('stammnummer').value = stammnummer;
+            document.getElementById('datumVon').value = datumVon;
+            document.getElementById('datumBis').value = datumBis;
+            document.getElementById('paketnummer').value = paketnummer;
+            document.getElementById('saeger').value = saeger;
+            document.getElementById('holzart').value = holzart;
+            document.getElementById('kategorie').value = kategorie;
+            document.getElementById('qualitaet').value = qualitaet;
+            document.getElementById('staerke').value = staerke;
+            document.getElementById('laenge').value = laenge;
+            document.getElementById('breite').value = breite;
+            
+            document.getElementById('stueck').value = '1';
             document.getElementById('quadratmeter').value = '0.00';
             document.getElementById('kubikmeter').value = '0.000';
-            document.getElementById('paketnummer').focus();
+            
+            calculateValues(); // Berechnungen aktualisieren
+            document.getElementById('stueck').focus();
         });
 
         // Neuer Stamm - Formular zurücksetzen
         function neuerStamm() {
-            const stammnummer = document.getElementById('stammnummer').value;
             document.getElementById('entryForm').reset();
-            document.getElementById('stammnummer').value = stammnummer; // Stammnummer beibehalten
+            document.getElementById('stueck').value = '1';
             document.getElementById('quadratmeter').value = '0.00';
             document.getElementById('kubikmeter').value = '0.000';
-            document.getElementById('paketnummer').focus();
+            document.getElementById('stammnummer').focus();
         }
 
         // Einträge anzeigen
@@ -473,6 +526,7 @@
                         <button class="btn-delete" onclick="deleteEntry(${entry.id})">🗑️ Löschen</button>
                     </div>
                     <div class="entry-details">
+                        <div class="entry-detail"><strong>Zeitraum:</strong> ${entry.datumVon || '-'} bis ${entry.datumBis || '-'}</div>
                         <div class="entry-detail"><strong>Paketnummer:</strong> ${entry.paketnummer || '-'}</div>
                         <div class="entry-detail"><strong>Säger:</strong> ${entry.saeger || '-'}</div>
                         <div class="entry-detail"><strong>Holzart:</strong> ${entry.holzart || '-'}</div>
@@ -480,7 +534,8 @@
                         <div class="entry-detail"><strong>Qualität:</strong> ${entry.qualitaet || '-'}</div>
                         <div class="entry-detail"><strong>Stärke:</strong> ${entry.staerke ? entry.staerke + ' mm' : '-'}</div>
                         <div class="entry-detail"><strong>Länge:</strong> ${entry.laenge ? entry.laenge + ' m' : '-'}</div>
-                        <div class="entry-detail"><strong>Breite:</strong> ${entry.breite ? entry.breite + ' m' : '-'}</div>
+                        <div class="entry-detail"><strong>Breite:</strong> ${entry.breite ? entry.breite + ' cm' : '-'}</div>
+                        <div class="entry-detail"><strong>Stück:</strong> ${entry.stueck || '-'}</div>
                         <div class="entry-detail"><strong>Quadratmeter:</strong> ${entry.quadratmeter} m²</div>
                         <div class="entry-detail"><strong>Kubikmeter:</strong> ${entry.kubikmeter} m³</div>
                     </div>
@@ -513,6 +568,7 @@
 
             let totalKubik = 0;
             let totalQuadrat = 0;
+            let totalStueck = 0;
 
             entries.forEach(entry => {
                 const row = document.createElement('tr');
@@ -534,11 +590,12 @@
 
                 totalKubik += parseFloat(entry.kubikmeter) || 0;
                 totalQuadrat += parseFloat(entry.quadratmeter) || 0;
+                totalStueck += parseFloat(entry.stueck) || 0;
             });
 
             document.getElementById('totalKubikmeter').textContent = totalKubik.toFixed(3) + ' m³';
             document.getElementById('totalQuadratmeter').textContent = totalQuadrat.toFixed(2) + ' m²';
-            document.getElementById('totalStueck').textContent = entries.length;
+            document.getElementById('totalStueck').textContent = totalStueck;
         }
 
         // Initial focus
