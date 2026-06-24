@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rundholz Datenbank - Schnitthölzer & Furnier</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * {
             margin: 0;
@@ -406,7 +407,14 @@
         </div>
     </div>
 
-    <script>
+    <script type="module">
+        // Supabase initialisieren
+        const SUPABASE_URL = 'https://ohjmhitetpmvwalqcdzy.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9oam1oaXRldHBtdndhbHFjZHp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzMDgxMTIsImV4cCI6MjA5Nzg4NDExMn0.Jncbnnqkj-61ljoQrvsv-6cylw25m_cJLa0TyocPTwg';
+        
+        const { createClient } = window.supabase;
+        const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
         let entries = [];
 
         // Berechnung von Quadrat- und Kubikmetern
@@ -435,30 +443,40 @@
         document.getElementById('stueck').addEventListener('input', calculateValues);
 
         // Formular abschicken
-        document.getElementById('entryForm').addEventListener('submit', function(e) {
+        document.getElementById('entryForm').addEventListener('submit', async function(e) {
             e.preventDefault();
 
             const entry = {
-                id: Date.now(),
                 stammnummer: document.getElementById('stammnummer').value,
-                datumVon: document.getElementById('datumVon').value,
-                datumBis: document.getElementById('datumBis').value,
+                datum_von: document.getElementById('datumVon').value || null,
+                datum_bis: document.getElementById('datumBis').value || null,
                 paketnummer: document.getElementById('paketnummer').value,
                 saeger: document.getElementById('saeger').value,
                 holzart: document.getElementById('holzart').value,
                 kategorie: document.getElementById('kategorie').value,
                 qualitaet: document.getElementById('qualitaet').value,
-                staerke: document.getElementById('staerke').value,
-                laenge: document.getElementById('laenge').value,
-                breite: document.getElementById('breite').value,
-                stueck: document.getElementById('stueck').value,
-                quadratmeter: document.getElementById('quadratmeter').value,
-                kubikmeter: document.getElementById('kubikmeter').value
+                staerke: parseFloat(document.getElementById('staerke').value) || null,
+                laenge: parseFloat(document.getElementById('laenge').value) || null,
+                breite: parseFloat(document.getElementById('breite').value) || null,
+                stueck: parseInt(document.getElementById('stueck').value) || 1,
+                quadratmeter: parseFloat(document.getElementById('quadratmeter').value) || 0,
+                kubikmeter: parseFloat(document.getElementById('kubikmeter').value) || 0
             };
 
-            entries.push(entry);
-            displayEntries();
-            updateSummary();
+            // In Supabase speichern
+            const { data, error } = await supabaseClient
+                .from('holz_eintraege')
+                .insert([entry])
+                .select();
+
+            if (error) {
+                console.error('Fehler beim Speichern:', error);
+                alert('Fehler beim Speichern: ' + error.message);
+                return;
+            }
+
+            // Einträge neu laden
+            await loadEntries();
             
             // Formular zurücksetzen aber Felder bis Breite beibehalten
             const stammnummer = document.getElementById('stammnummer').value;
@@ -526,7 +544,7 @@
                         <button class="btn-delete" onclick="deleteEntry(${entry.id})">🗑️ Löschen</button>
                     </div>
                     <div class="entry-details">
-                        <div class="entry-detail"><strong>Zeitraum:</strong> ${entry.datumVon || '-'} bis ${entry.datumBis || '-'}</div>
+                        <div class="entry-detail"><strong>Zeitraum:</strong> ${entry.datum_von || '-'} bis ${entry.datum_bis || '-'}</div>
                         <div class="entry-detail"><strong>Paketnummer:</strong> ${entry.paketnummer || '-'}</div>
                         <div class="entry-detail"><strong>Säger:</strong> ${entry.saeger || '-'}</div>
                         <div class="entry-detail"><strong>Holzart:</strong> ${entry.holzart || '-'}</div>
@@ -545,12 +563,38 @@
         }
 
         // Eintrag löschen
-        function deleteEntry(id) {
+        async function deleteEntry(id) {
             if (confirm('Möchten Sie diesen Eintrag wirklich löschen?')) {
-                entries = entries.filter(entry => entry.id !== id);
-                displayEntries();
-                updateSummary();
+                const { error } = await supabaseClient
+                    .from('holz_eintraege')
+                    .delete()
+                    .eq('id', id);
+
+                if (error) {
+                    console.error('Fehler beim Löschen:', error);
+                    alert('Fehler beim Löschen: ' + error.message);
+                    return;
+                }
+
+                await loadEntries();
             }
+        }
+
+        // Einträge aus Supabase laden
+        async function loadEntries() {
+            const { data, error } = await supabaseClient
+                .from('holz_eintraege')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error('Fehler beim Laden:', error);
+                return;
+            }
+
+            entries = data || [];
+            displayEntries();
+            updateSummary();
         }
 
         // Zusammenfassung aktualisieren
@@ -598,8 +642,11 @@
             document.getElementById('totalStueck').textContent = totalStueck;
         }
 
-        // Initial focus
-        document.getElementById('stammnummer').focus();
+        // Beim Laden der Seite Einträge laden
+        window.addEventListener('DOMContentLoaded', async () => {
+            await loadEntries();
+            document.getElementById('stammnummer').focus();
+        });
     </script>
 </body>
 </html>
