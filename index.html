@@ -464,6 +464,7 @@
             };
 
             // In Supabase speichern
+            console.log('Speichere Eintrag:', entry);
             const { data, error } = await supabaseClient
                 .from('holz_eintraege')
                 .insert([entry])
@@ -474,6 +475,9 @@
                 alert('Fehler beim Speichern: ' + error.message);
                 return;
             }
+
+            console.log('Erfolgreich gespeichert:', data);
+            alert('Eintrag wurde gespeichert!');
 
             // Einträge neu laden
             await loadEntries();
@@ -582,6 +586,7 @@
 
         // Einträge aus Supabase laden
         async function loadEntries() {
+            console.log('Lade Einträge...');
             const { data, error } = await supabaseClient
                 .from('holz_eintraege')
                 .select('*')
@@ -589,9 +594,11 @@
 
             if (error) {
                 console.error('Fehler beim Laden:', error);
+                alert('Fehler beim Laden: ' + error.message);
                 return;
             }
 
+            console.log('Geladene Einträge:', data);
             entries = data || [];
             displayEntries();
             updateSummary();
