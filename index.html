@@ -357,6 +357,7 @@
                 <div class="button-group">
                     <button type="submit" class="btn btn-primary">✓ Holz hinzufügen</button>
                     <button type="button" class="btn btn-secondary" onclick="neuerStamm()">🔄 Neuer Stamm</button>
+                    <button type="button" class="btn btn-secondary" onclick="openUebersicht()">📊 Übersicht</button>
                 </div>
             </form>
         </div>
@@ -524,6 +525,11 @@
             document.getElementById('quadratmeter').value = '0.00';
             document.getElementById('kubikmeter').value = '0.000';
             document.getElementById('stammnummer').focus();
+        }
+
+        // Übersicht öffnen
+        function openUebersicht() {
+            window.open('uebersicht.html', '_blank');
         }
 
         // Einträge anzeigen

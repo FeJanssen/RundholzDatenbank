@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aufmaßliste Übersicht</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            background: white;
+            border: 1px solid #ddd;
+            padding: 30px;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+
+        .tree {
+            margin: 20px 0;
+        }
+
+        .level-stamm {
+            margin-bottom: 30px;
+            border: 2px solid #333;
+            padding: 15px;
+        }
+
+        .level-holzart {
+            margin: 15px 0 15px 30px;
+            border: 1px solid #666;
+            padding: 12px;
+            background: #fafafa;
+        }
+
+        .level-kategorie {
+            margin: 12px 0 12px 30px;
+            border: 1px solid #999;
+            padding: 10px;
+            background: #fff;
+        }
+
+        .level-staerke {
+            margin: 10px 0 10px 30px;
+            padding: 8px;
+            background: #f5f5f5;
+            border-left: 3px solid #ccc;
+            display: grid;
+            grid-template-columns: 1fr auto auto auto;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .header {
+            font-weight: 700;
+            font-size: 1.1em;
+            margin-bottom: 10px;
+            padding: 8px;
+            background: #e8e8e8;
+        }
+
+        .stamm-header {
+            background: #333;
+            color: white;
+            font-size: 1.3em;
+        }
+
+        .holzart-header {
+            background: #666;
+            color: white;
+        }
+
+        .kategorie-header {
+            background: #999;
+            color: white;
+        }
+
+        .stats {
+            display: flex;
+            gap: 20px;
+            font-weight: 600;
+        }
+
+        .stat-item {
+            padding: 5px 10px;
+            background: white;
+            border: 1px solid #ddd;
+        }
+
+        .stat-label {
+            font-size: 0.85em;
+            color: #666;
+            margin-right: 5px;
+        }
+
+        .stat-value {
+            color: #333;
+        }
+
+        .print-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 24px;
+            background: #333;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+        }
+
+        .print-btn:hover {
+            background: #555;
+        }
+
+        @media print {
+            .print-btn {
+                display: none;
+            }
+            
+            body {
+                background: white;
+            }
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            font-size: 1.2em;
+            color: #666;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 50px;
+            font-size: 1.1em;
+            color: #999;
+        }
+
+        .staerke-label {
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <button class="print-btn" onclick="window.print()">🖨️ Drucken</button>
+
+    <div class="container">
+        <h1>Aufmaßliste Übersicht</h1>
+        <div id="loading" class="loading">Lade Daten...</div>
+        <div id="content"></div>
+    </div>
+
+    <script type="module">
+        // Supabase initialisieren
+        const SUPABASE_URL = 'https://ohjmhitetpmvwalqcdzy.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9oam1oaXRldHBtdndhbHFjZHp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzMDgxMTIsImV4cCI6MjA5Nzg4NDExMn0.Jncbnnqkj-61ljoQrvsv-6cylw25m_cJLa0TyocPTwg';
+        
+        const { createClient } = window.supabase;
+        const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        async function loadData() {
+            const { data, error } = await supabaseClient
+                .from('holz_eintraege')
+                .select('*')
+                .order('stammnummer', { ascending: true });
+
+            if (error) {
+                console.error('Fehler beim Laden:', error);
+                document.getElementById('loading').innerHTML = 'Fehler beim Laden der Daten: ' + error.message;
+                return;
+            }
+
+            document.getElementById('loading').style.display = 'none';
+
+            if (!data || data.length === 0) {
+                document.getElementById('content').innerHTML = '<div class="no-data">Keine Daten vorhanden</div>';
+                return;
+            }
+
+            buildTree(data);
+        }
+
+        function buildTree(entries) {
+            // Hierarchisch gruppieren: Stamm → Holzart → Kategorie → Stärke
+            const tree = {};
+
+            entries.forEach(entry => {
+                const stamm = entry.stammnummer || 'Unbekannt';
+                const holzart = entry.holzart || 'Unbekannt';
+                const kategorie = entry.kategorie || 'Unbekannt';
+                const staerke = entry.staerke || 'Unbekannt';
+
+                if (!tree[stamm]) tree[stamm] = {};
+                if (!tree[stamm][holzart]) tree[stamm][holzart] = {};
+                if (!tree[stamm][holzart][kategorie]) tree[stamm][holzart][kategorie] = {};
+                if (!tree[stamm][holzart][kategorie][staerke]) {
+                    tree[stamm][holzart][kategorie][staerke] = {
+                        stueck: 0,
+                        quadratmeter: 0,
+                        kubikmeter: 0,
+                        eintraege: []
+                    };
+                }
+
+                const staerkeData = tree[stamm][holzart][kategorie][staerke];
+                staerkeData.stueck += parseInt(entry.stueck) || 0;
+                staerkeData.quadratmeter += parseFloat(entry.quadratmeter) || 0;
+                staerkeData.kubikmeter += parseFloat(entry.kubikmeter) || 0;
+                staerkeData.eintraege.push(entry);
+            });
+
+            // HTML generieren
+            let html = '<div class="tree">';
+
+            for (const stamm in tree) {
+                const stammData = calculateTotals(tree[stamm]);
+                
+                html += `
+                    <div class="level-stamm">
+                        <div class="header stamm-header">
+                            Stamm: ${stamm}
+                            <span class="stats">
+                                <span class="stat-item"><span class="stat-label">Gesamt Stück:</span><span class="stat-value">${stammData.stueck}</span></span>
+                                <span class="stat-item"><span class="stat-label">Gesamt m²:</span><span class="stat-value">${stammData.quadratmeter.toFixed(2)}</span></span>
+                                <span class="stat-item"><span class="stat-label">Gesamt m³:</span><span class="stat-value">${stammData.kubikmeter.toFixed(3)}</span></span>
+                            </span>
+                        </div>
+                `;
+
+                for (const holzart in tree[stamm]) {
+                    const holzartData = calculateTotals(tree[stamm][holzart]);
+                    
+                    html += `
+                        <div class="level-holzart">
+                            <div class="header holzart-header">
+                                Holzart: ${holzart}
+                                <span class="stats">
+                                    <span class="stat-item"><span class="stat-label">Stück:</span><span class="stat-value">${holzartData.stueck}</span></span>
+                                    <span class="stat-item"><span class="stat-label">m²:</span><span class="stat-value">${holzartData.quadratmeter.toFixed(2)}</span></span>
+                                    <span class="stat-item"><span class="stat-label">m³:</span><span class="stat-value">${holzartData.kubikmeter.toFixed(3)}</span></span>
+                                </span>
+                            </div>
+                    `;
+
+                    for (const kategorie in tree[stamm][holzart]) {
+                        const kategorieData = calculateTotals(tree[stamm][holzart][kategorie]);
+                        
+                        html += `
+                            <div class="level-kategorie">
+                                <div class="header kategorie-header">
+                                    Kategorie: ${kategorie}
+                                    <span class="stats">
+                                        <span class="stat-item"><span class="stat-label">Stück:</span><span class="stat-value">${kategorieData.stueck}</span></span>
+                                        <span class="stat-item"><span class="stat-label">m²:</span><span class="stat-value">${kategorieData.quadratmeter.toFixed(2)}</span></span>
+                                        <span class="stat-item"><span class="stat-label">m³:</span><span class="stat-value">${kategorieData.kubikmeter.toFixed(3)}</span></span>
+                                    </span>
+                                </div>
+                        `;
+
+                        for (const staerke in tree[stamm][holzart][kategorie]) {
+                            const staerkeData = tree[stamm][holzart][kategorie][staerke];
+                            
+                            html += `
+                                <div class="level-staerke">
+                                    <div class="staerke-label">Stärke: ${staerke} mm</div>
+                                    <div><span class="stat-label">Stück:</span> ${staerkeData.stueck}</div>
+                                    <div><span class="stat-label">m²:</span> ${staerkeData.quadratmeter.toFixed(2)}</div>
+                                    <div><span class="stat-label">m³:</span> ${staerkeData.kubikmeter.toFixed(3)}</div>
+                                </div>
+                            `;
+                        }
+
+                        html += '</div>'; // close kategorie
+                    }
+
+                    html += '</div>'; // close holzart
+                }
+
+                html += '</div>'; // close stamm
+            }
+
+            html += '</div>';
+
+            document.getElementById('content').innerHTML = html;
+        }
+
+        function calculateTotals(obj) {
+            let totals = { stueck: 0, quadratmeter: 0, kubikmeter: 0 };
+
+            function traverse(node) {
+                if (node.stueck !== undefined) {
+                    // Leaf node (Stärke-Ebene)
+                    totals.stueck += node.stueck;
+                    totals.quadratmeter += node.quadratmeter;
+                    totals.kubikmeter += node.kubikmeter;
+                } else {
+                    // Intermediate node
+                    for (const key in node) {
+                        traverse(node[key]);
+                    }
+                }
+            }
+
+            traverse(obj);
+            return totals;
+        }
+
+        // Daten beim Laden der Seite laden
+        window.addEventListener('DOMContentLoaded', loadData);
+    </script>
+</body>
+</html>
