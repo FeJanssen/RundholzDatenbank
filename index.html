@@ -420,7 +420,7 @@
         </div>
     </div>
 
-    <script type="module">
+    <script>
         // Supabase initialisieren
         const SUPABASE_URL = 'https://ohjmhitetpmvwalqcdzy.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9oam1oaXRldHBtdndhbHFjZHp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzMDgxMTIsImV4cCI6MjA5Nzg4NDExMn0.Jncbnnqkj-61ljoQrvsv-6cylw25m_cJLa0TyocPTwg';
@@ -541,7 +541,11 @@
 
         // Übersicht öffnen
         function openUebersicht() {
-            window.open('uebersicht.html', '_blank');
+            console.log('Öffne Übersicht...');
+            const newWindow = window.open('uebersicht.html', '_blank');
+            if (!newWindow) {
+                alert('Pop-up wurde blockiert! Bitte erlauben Sie Pop-ups für diese Seite.');
+            }
         }
 
         // Einträge anzeigen
