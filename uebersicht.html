@@ -14,104 +14,88 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f5f5f5;
+            background: white;
             padding: 20px;
         }
 
         .container {
             max-width: 100%;
             margin: 0 auto;
-            background: white;
-            border: 1px solid #ddd;
-            padding: 30px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #333;
         }
 
         h1 {
             color: #333;
-            text-align: center;
-            margin-bottom: 30px;
-            font-size: 2.5em;
+            font-size: 2em;
         }
 
-        .tree {
-            margin: 20px 0;
+        .datum {
+            font-size: 1.2em;
+            color: #666;
         }
 
-        .level-stamm {
-            margin-bottom: 30px;
-            border: 2px solid #333;
-            padding: 15px;
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
         }
 
-        .level-holzart {
-            margin: 15px 0 15px 30px;
-            border: 1px solid #666;
-            padding: 12px;
-            background: #fafafa;
-        }
-
-        .level-kategorie {
-            margin: 12px 0 12px 30px;
-            border: 1px solid #999;
-            padding: 10px;
-            background: #fff;
-        }
-
-        .level-staerke {
-            margin: 10px 0 10px 30px;
-            padding: 8px;
-            background: #f5f5f5;
-            border-left: 3px solid #ccc;
-            display: grid;
-            grid-template-columns: 1fr auto auto auto;
-            gap: 20px;
-            align-items: center;
-        }
-
-        .header {
-            font-weight: 700;
-            font-size: 1.1em;
-            margin-bottom: 10px;
-            padding: 8px;
-            background: #e8e8e8;
-        }
-
-        .stamm-header {
+        th {
             background: #333;
             color: white;
-            font-size: 1.3em;
-        }
-
-        .holzart-header {
-            background: #666;
-            color: white;
-        }
-
-        .kategorie-header {
-            background: #999;
-            color: white;
-        }
-
-        .stats {
-            display: flex;
-            gap: 20px;
+            padding: 12px;
+            text-align: left;
             font-weight: 600;
+            border: 1px solid #000;
         }
 
-        .stat-item {
-            padding: 5px 10px;
-            background: white;
+        td {
+            padding: 10px 12px;
             border: 1px solid #ddd;
         }
 
-        .stat-label {
-            font-size: 0.85em;
-            color: #666;
-            margin-right: 5px;
+        tr:hover {
+            background-color: #f5f5f5;
         }
 
-        .stat-value {
-            color: #333;
+        .stamm-row {
+            background: #e8e8e8;
+            font-weight: 700;
+            font-size: 1.1em;
+        }
+
+        .holzart-row {
+            background: #f0f0f0;
+            font-weight: 600;
+            padding-left: 30px;
+        }
+
+        .kategorie-row {
+            background: #f8f8f8;
+            font-weight: 500;
+            padding-left: 60px;
+        }
+
+        .staerke-row {
+            padding-left: 90px;
+        }
+
+        .summe-row {
+            background: #d0d0d0;
+            font-weight: 700;
+            border-top: 2px solid #000;
+        }
+
+        .number {
+            text-align: right;
         }
 
         .print-btn {
@@ -131,13 +115,53 @@
             background: #555;
         }
 
+        .filter-section {
+            background: #f5f5f5;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+        }
+
+        .filter-row {
+            display: flex;
+            gap: 20px;
+            align-items: flex-end;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .filter-group label {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .filter-group input {
+            padding: 8px 12px;
+            border: 1px solid #999;
+            font-size: 1em;
+        }
+
+        .filter-btn {
+            padding: 8px 24px;
+            background: #333;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+        }
+
+        .filter-btn:hover {
+            background: #555;
+        }
+
         @media print {
-            .print-btn {
+            .print-btn, .filter-section {
                 display: none;
-            }
-            
-            body {
-                background: white;
             }
         }
 
@@ -147,29 +171,50 @@
             font-size: 1.2em;
             color: #666;
         }
-
-        .no-data {
-            text-align: center;
-            padding: 50px;
-            font-size: 1.1em;
-            color: #999;
-        }
-
-        .staerke-label {
-            font-weight: 600;
-        }
     </style>
 </head>
 <body>
     <button class="print-btn" onclick="window.print()">🖨️ Drucken</button>
 
     <div class="container">
-        <h1>Aufmaßliste Übersicht</h1>
+        <div class="header">
+            <h1>Aufmaßliste</h1>
+            <div class="datum" id="schnittdatum">Schnittdatum: -</div>
+        </div>
+
+        <div class="filter-section">
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label for="datumVon">Schnittdatum von:</label>
+                    <input type="date" id="datumVon">
+                </div>
+                <div class="filter-group">
+                    <label for="datumBis">Schnittdatum bis:</label>
+                    <input type="date" id="datumBis">
+                </div>
+                <button class="filter-btn" onclick="loadData()">🔍 Filtern</button>
+            </div>
+        </div>
+
         <div id="loading" class="loading">Lade Daten...</div>
-        <div id="content"></div>
+        
+        <table id="dataTable" style="display: none;">
+            <thead>
+                <tr>
+                    <th>Stammnummer</th>
+                    <th>Holzart</th>
+                    <th>Kategorie</th>
+                    <th>Stärke (mm)</th>
+                    <th class="number">Anzahl</th>
+                    <th class="number">Summe m³</th>
+                    <th class="number">Summe m²</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+        </table>
     </div>
 
-    <script type="module">
+    <script>
         // Supabase initialisieren
         const SUPABASE_URL = 'https://ohjmhitetpmvwalqcdzy.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9oam1oaXRldHBtdndhbHFjZHp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzMDgxMTIsImV4cCI6MjA5Nzg4NDExMn0.Jncbnnqkj-61ljoQrvsv-6cylw25m_cJLa0TyocPTwg';
@@ -178,10 +223,25 @@
         const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         async function loadData() {
-            const { data, error } = await supabaseClient
+            const datumVon = document.getElementById('datumVon').value;
+            const datumBis = document.getElementById('datumBis').value;
+
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('dataTable').style.display = 'none';
+
+            let query = supabaseClient
                 .from('holz_eintraege')
-                .select('*')
-                .order('stammnummer', { ascending: true });
+                .select('*');
+
+            // Datumsfilter anwenden
+            if (datumVon) {
+                query = query.gte('datum_von', datumVon);
+            }
+            if (datumBis) {
+                query = query.lte('datum_bis', datumBis);
+            }
+
+            const { data, error } = await query.order('stammnummer', { ascending: true });
 
             if (error) {
                 console.error('Fehler beim Laden:', error);
@@ -192,15 +252,22 @@
             document.getElementById('loading').style.display = 'none';
 
             if (!data || data.length === 0) {
-                document.getElementById('content').innerHTML = '<div class="no-data">Keine Daten vorhanden</div>';
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('loading').innerHTML = 'Keine Daten für den ausgewählten Zeitraum vorhanden';
                 return;
             }
 
-            buildTree(data);
+            // Schnittdatum anzeigen
+            const datumVonDisplay = datumVon || 'Anfang';
+            const datumBisDisplay = datumBis || 'Heute';
+            document.getElementById('schnittdatum').textContent = `Schnittdatum: ${datumVonDisplay} bis ${datumBisDisplay}`;
+
+            buildTable(data);
+            document.getElementById('dataTable').style.display = 'table';
         }
 
-        function buildTree(entries) {
-            // Hierarchisch gruppieren: Stamm → Holzart → Kategorie → Stärke
+        function buildTable(entries) {
+            // Hierarchisch gruppieren
             const tree = {};
 
             entries.forEach(entry => {
@@ -216,8 +283,7 @@
                     tree[stamm][holzart][kategorie][staerke] = {
                         stueck: 0,
                         quadratmeter: 0,
-                        kubikmeter: 0,
-                        eintraege: []
+                        kubikmeter: 0
                     };
                 }
 
@@ -225,82 +291,93 @@
                 staerkeData.stueck += parseInt(entry.stueck) || 0;
                 staerkeData.quadratmeter += parseFloat(entry.quadratmeter) || 0;
                 staerkeData.kubikmeter += parseFloat(entry.kubikmeter) || 0;
-                staerkeData.eintraege.push(entry);
             });
 
-            // HTML generieren
-            let html = '<div class="tree">';
+            // Tabelle generieren
+            const tbody = document.getElementById('tableBody');
+            let html = '';
+
+            let gesamtStueck = 0;
+            let gesamtQuadrat = 0;
+            let gesamtKubik = 0;
 
             for (const stamm in tree) {
-                const stammData = calculateTotals(tree[stamm]);
+                const stammTotals = calculateTotals(tree[stamm]);
                 
+                // Stamm-Zeile
                 html += `
-                    <div class="level-stamm">
-                        <div class="header stamm-header">
-                            Stamm: ${stamm}
-                            <span class="stats">
-                                <span class="stat-item"><span class="stat-label">Gesamt Stück:</span><span class="stat-value">${stammData.stueck}</span></span>
-                                <span class="stat-item"><span class="stat-label">Gesamt m²:</span><span class="stat-value">${stammData.quadratmeter.toFixed(2)}</span></span>
-                                <span class="stat-item"><span class="stat-label">Gesamt m³:</span><span class="stat-value">${stammData.kubikmeter.toFixed(3)}</span></span>
-                            </span>
-                        </div>
+                    <tr class="stamm-row">
+                        <td colspan="4">Stamm: ${stamm}</td>
+                        <td class="number">${stammTotals.stueck}</td>
+                        <td class="number">${stammTotals.kubikmeter.toFixed(3)}</td>
+                        <td class="number">${stammTotals.quadratmeter.toFixed(2)}</td>
+                    </tr>
                 `;
 
                 for (const holzart in tree[stamm]) {
-                    const holzartData = calculateTotals(tree[stamm][holzart]);
+                    const holzartTotals = calculateTotals(tree[stamm][holzart]);
                     
+                    // Holzart-Zeile
                     html += `
-                        <div class="level-holzart">
-                            <div class="header holzart-header">
-                                Holzart: ${holzart}
-                                <span class="stats">
-                                    <span class="stat-item"><span class="stat-label">Stück:</span><span class="stat-value">${holzartData.stueck}</span></span>
-                                    <span class="stat-item"><span class="stat-label">m²:</span><span class="stat-value">${holzartData.quadratmeter.toFixed(2)}</span></span>
-                                    <span class="stat-item"><span class="stat-label">m³:</span><span class="stat-value">${holzartData.kubikmeter.toFixed(3)}</span></span>
-                                </span>
-                            </div>
+                        <tr class="holzart-row">
+                            <td></td>
+                            <td colspan="3">${holzart}</td>
+                            <td class="number">${holzartTotals.stueck}</td>
+                            <td class="number">${holzartTotals.kubikmeter.toFixed(3)}</td>
+                            <td class="number">${holzartTotals.quadratmeter.toFixed(2)}</td>
+                        </tr>
                     `;
 
                     for (const kategorie in tree[stamm][holzart]) {
-                        const kategorieData = calculateTotals(tree[stamm][holzart][kategorie]);
+                        const kategorieTotals = calculateTotals(tree[stamm][holzart][kategorie]);
                         
+                        // Kategorie-Zeile
                         html += `
-                            <div class="level-kategorie">
-                                <div class="header kategorie-header">
-                                    Kategorie: ${kategorie}
-                                    <span class="stats">
-                                        <span class="stat-item"><span class="stat-label">Stück:</span><span class="stat-value">${kategorieData.stueck}</span></span>
-                                        <span class="stat-item"><span class="stat-label">m²:</span><span class="stat-value">${kategorieData.quadratmeter.toFixed(2)}</span></span>
-                                        <span class="stat-item"><span class="stat-label">m³:</span><span class="stat-value">${kategorieData.kubikmeter.toFixed(3)}</span></span>
-                                    </span>
-                                </div>
+                            <tr class="kategorie-row">
+                                <td></td>
+                                <td></td>
+                                <td colspan="2">${kategorie}</td>
+                                <td class="number">${kategorieTotals.stueck}</td>
+                                <td class="number">${kategorieTotals.kubikmeter.toFixed(3)}</td>
+                                <td class="number">${kategorieTotals.quadratmeter.toFixed(2)}</td>
+                            </tr>
                         `;
 
                         for (const staerke in tree[stamm][holzart][kategorie]) {
                             const staerkeData = tree[stamm][holzart][kategorie][staerke];
                             
+                            // Stärke-Zeile
                             html += `
-                                <div class="level-staerke">
-                                    <div class="staerke-label">Stärke: ${staerke} mm</div>
-                                    <div><span class="stat-label">Stück:</span> ${staerkeData.stueck}</div>
-                                    <div><span class="stat-label">m²:</span> ${staerkeData.quadratmeter.toFixed(2)}</div>
-                                    <div><span class="stat-label">m³:</span> ${staerkeData.kubikmeter.toFixed(3)}</div>
-                                </div>
+                                <tr class="staerke-row">
+                                    <td></td>
+                                    <td></td>
+                                    <td></td>
+                                    <td>${staerke} mm</td>
+                                    <td class="number">${staerkeData.stueck}</td>
+                                    <td class="number">${staerkeData.kubikmeter.toFixed(3)}</td>
+                                    <td class="number">${staerkeData.quadratmeter.toFixed(2)}</td>
+                                </tr>
                             `;
                         }
-
-                        html += '</div>'; // close kategorie
                     }
-
-                    html += '</div>'; // close holzart
                 }
 
-                html += '</div>'; // close stamm
+                gesamtStueck += stammTotals.stueck;
+                gesamtQuadrat += stammTotals.quadratmeter;
+                gesamtKubik += stammTotals.kubikmeter;
             }
 
-            html += '</div>';
+            // Gesamtsumme
+            html += `
+                <tr class="summe-row">
+                    <td colspan="4">GESAMT</td>
+                    <td class="number">${gesamtStueck}</td>
+                    <td class="number">${gesamtKubik.toFixed(3)}</td>
+                    <td class="number">${gesamtQuadrat.toFixed(2)}</td>
+                </tr>
+            `;
 
-            document.getElementById('content').innerHTML = html;
+            tbody.innerHTML = html;
         }
 
         function calculateTotals(obj) {
@@ -308,12 +385,10 @@
 
             function traverse(node) {
                 if (node.stueck !== undefined) {
-                    // Leaf node (Stärke-Ebene)
                     totals.stueck += node.stueck;
                     totals.quadratmeter += node.quadratmeter;
                     totals.kubikmeter += node.kubikmeter;
                 } else {
-                    // Intermediate node
                     for (const key in node) {
                         traverse(node[key]);
                     }
@@ -324,7 +399,6 @@
             return totals;
         }
 
-        // Daten beim Laden der Seite laden
         window.addEventListener('DOMContentLoaded', loadData);
     </script>
 </body>

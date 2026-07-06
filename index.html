@@ -369,39 +369,13 @@
                 <div class="button-group">
                     <button type="submit" class="btn btn-primary">✓ Holz hinzufügen</button>
                     <button type="button" class="btn btn-secondary" onclick="neuerStamm()">🔄 Neuer Stamm</button>
-                    <button type="button" class="btn btn-uebersicht" onclick="openUebersicht()">📊 ÜBERSICHT</button>
+                    <button type="button" class="btn btn-uebersicht" onclick="window.open('uebersicht.html', '_blank');">📊 ÜBERSICHT</button>
                 </div>
             </form>
         </div>
 
-        <div class="entries-section" id="entriesSection" style="display: none;">
-            <h2>📋 Eingetragene Hölzer</h2>
-            <div id="entriesList"></div>
-        </div>
-
         <div class="summary-section" id="summarySection" style="display: none;">
             <h2>📊 Zusammenfassung</h2>
-            <div style="overflow-x: auto;">
-                <table class="summary-table">
-                    <thead>
-                        <tr>
-                            <th>Stamm</th>
-                            <th>Holzart</th>
-                            <th>Kategorie</th>
-                            <th>Qualität</th>
-                            <th>Lieferant</th>
-                            <th>Durchmesser</th>
-                            <th>Länge</th>
-                            <th>Kubikmeter</th>
-                            <th>Durchm. neu</th>
-                            <th>Länge neu</th>
-                            <th>Kubikm. neu</th>
-                            <th>Zusatz</th>
-                        </tr>
-                    </thead>
-                    <tbody id="summaryTableBody"></tbody>
-                </table>
-            </div>
 
             <div class="totals">
                 <div class="total-card">
@@ -418,9 +392,32 @@
                 </div>
             </div>
         </div>
+
+        <div class="entries-section" id="entriesSection" style="display: none;">
+            <h2>📋 Eingetragene Hölzer</h2>
+            <div id="entriesList"></div>
+        </div>
     </div>
 
     <script>
+        // Globale Funktionen ZUERST definieren
+        function neuerStamm() {
+            console.log('Neuer Stamm wird aufgerufen');
+            document.getElementById('entryForm').reset();
+            document.getElementById('stueck').value = '1';
+            document.getElementById('quadratmeter').value = '0.00';
+            document.getElementById('kubikmeter').value = '0.000';
+            document.getElementById('stammnummer').focus();
+            
+            // Aktuelle Session zurücksetzen
+            currentStammnummer = null;
+            entries = [];
+            
+            // Listen ausblenden (ohne DB zu löschen)
+            document.getElementById('entriesSection').style.display = 'none';
+            document.getElementById('summarySection').style.display = 'none';
+        }
+
         // Supabase initialisieren
         const SUPABASE_URL = 'https://ohjmhitetpmvwalqcdzy.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9oam1oaXRldHBtdndhbHFjZHp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzMDgxMTIsImV4cCI6MjA5Nzg4NDExMn0.Jncbnnqkj-61ljoQrvsv-6cylw25m_cJLa0TyocPTwg';
@@ -429,6 +426,7 @@
         const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let entries = [];
+        let currentStammnummer = null; // Aktueller Stamm in dieser Session
 
         // Berechnung von Quadrat- und Kubikmetern
         function calculateValues() {
@@ -492,6 +490,9 @@
             console.log('Erfolgreich gespeichert:', data);
             alert('Eintrag wurde gespeichert!');
 
+            // Aktuelle Stammnummer setzen
+            currentStammnummer = entry.stammnummer;
+
             // Einträge neu laden
             await loadEntries();
             
@@ -529,24 +530,6 @@
             calculateValues(); // Berechnungen aktualisieren
             document.getElementById('stueck').focus();
         });
-
-        // Neuer Stamm - Formular zurücksetzen
-        function neuerStamm() {
-            document.getElementById('entryForm').reset();
-            document.getElementById('stueck').value = '1';
-            document.getElementById('quadratmeter').value = '0.00';
-            document.getElementById('kubikmeter').value = '0.000';
-            document.getElementById('stammnummer').focus();
-        }
-
-        // Übersicht öffnen
-        function openUebersicht() {
-            console.log('Öffne Übersicht...');
-            const newWindow = window.open('uebersicht.html', '_blank');
-            if (!newWindow) {
-                alert('Pop-up wurde blockiert! Bitte erlauben Sie Pop-ups für diese Seite.');
-            }
-        }
 
         // Einträge anzeigen
         function displayEntries() {
@@ -609,9 +592,20 @@
         // Einträge aus Supabase laden
         async function loadEntries() {
             console.log('Lade Einträge...');
+            
+            // Wenn kein aktueller Stamm gesetzt ist, nichts laden
+            if (!currentStammnummer) {
+                entries = [];
+                displayEntries();
+                updateSummary();
+                return;
+            }
+            
+            // Nur Einträge für den aktuellen Stamm laden
             const { data, error } = await supabaseClient
                 .from('holz_eintraege')
                 .select('*')
+                .eq('stammnummer', currentStammnummer)
                 .order('created_at', { ascending: false });
 
             if (error) {
@@ -629,7 +623,6 @@
         // Zusammenfassung aktualisieren
         function updateSummary() {
             const summarySection = document.getElementById('summarySection');
-            const summaryTableBody = document.getElementById('summaryTableBody');
 
             if (entries.length === 0) {
                 summarySection.style.display = 'none';
@@ -637,30 +630,12 @@
             }
 
             summarySection.style.display = 'block';
-            summaryTableBody.innerHTML = '';
 
             let totalKubik = 0;
             let totalQuadrat = 0;
             let totalStueck = 0;
 
             entries.forEach(entry => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${entry.stammnummer || '-'}</td>
-                    <td>${entry.holzart || '-'}</td>
-                    <td>${entry.kategorie || '-'}</td>
-                    <td>${entry.qualitaet || '-'}</td>
-                    <td>${entry.saeger || '-'}</td>
-                    <td>-</td>
-                    <td>${entry.laenge ? entry.laenge + ' m' : '-'}</td>
-                    <td>${entry.kubikmeter} m³</td>
-                    <td>-</td>
-                    <td>-</td>
-                    <td>-</td>
-                    <td>-</td>
-                `;
-                summaryTableBody.appendChild(row);
-
                 totalKubik += parseFloat(entry.kubikmeter) || 0;
                 totalQuadrat += parseFloat(entry.quadratmeter) || 0;
                 totalStueck += parseFloat(entry.stueck) || 0;
