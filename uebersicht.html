@@ -185,6 +185,10 @@
         <div class="filter-section">
             <div class="filter-row">
                 <div class="filter-group">
+                    <label for="stammnummerSuche">Stammnummer:</label>
+                    <input type="text" id="stammnummerSuche" placeholder="z.B. 001">
+                </div>
+                <div class="filter-group">
                     <label for="datumVon">Schnittdatum von:</label>
                     <input type="date" id="datumVon">
                 </div>
@@ -223,6 +227,7 @@
         const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         async function loadData() {
+            const stammnummerSuche = document.getElementById('stammnummerSuche').value;
             const datumVon = document.getElementById('datumVon').value;
             const datumBis = document.getElementById('datumBis').value;
 
@@ -232,6 +237,11 @@
             let query = supabaseClient
                 .from('holz_eintraege')
                 .select('*');
+
+            // Stammnummer-Filter (optional)
+            if (stammnummerSuche) {
+                query = query.eq('stammnummer', stammnummerSuche);
+            }
 
             // Datumsfilter anwenden
             if (datumVon) {
