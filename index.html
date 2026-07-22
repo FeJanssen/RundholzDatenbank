@@ -349,7 +349,7 @@
                         <input type="number" id="laenge" step="0.01" min="0">
                     </div>
                     <div class="form-group">
-                        <label for="breite">Breite (cm)</label>
+                        <label for="breite">Breite (mm)</label>
                         <input type="number" id="breite" step="0.1" min="0">
                     </div>
                     <div class="form-group">
@@ -431,18 +431,18 @@
         // Berechnung von Quadrat- und Kubikmetern
         function calculateValues() {
             const laenge = parseFloat(document.getElementById('laenge').value) || 0;
-            const breite = parseFloat(document.getElementById('breite').value) || 0; // in cm
+            const breite = parseFloat(document.getElementById('breite').value) || 0; // in mm
             const staerke = parseFloat(document.getElementById('staerke').value) || 0; // in mm
             const stueck = parseFloat(document.getElementById('stueck').value) || 1;
 
-            // Breite von cm in m umrechnen
-            const breiteInM = breite / 100;
+            // Breite von mm in m umrechnen
+            const breiteInM = breite / 1000;
 
             // Quadratmeter = Länge × Breite × Stück
             const quadratmeter = laenge * breiteInM * stueck;
             document.getElementById('quadratmeter').value = quadratmeter.toFixed(2);
 
-            // Kubikmeter = Länge × Breite × Stärke × Stück (Stärke von mm in m, Breite von cm in m umrechnen)
+            // Kubikmeter = Länge × Breite × Stärke × Stück (Stärke und Breite von mm in m umrechnen)
             const kubikmeter = laenge * breiteInM * (staerke / 1000) * stueck;
             document.getElementById('kubikmeter').value = kubikmeter.toFixed(3);
         }
@@ -561,7 +561,7 @@
                         <div class="entry-detail"><strong>Qualität:</strong> ${entry.qualitaet || '-'}</div>
                         <div class="entry-detail"><strong>Stärke:</strong> ${entry.staerke ? entry.staerke + ' mm' : '-'}</div>
                         <div class="entry-detail"><strong>Länge:</strong> ${entry.laenge ? entry.laenge + ' m' : '-'}</div>
-                        <div class="entry-detail"><strong>Breite:</strong> ${entry.breite ? entry.breite + ' cm' : '-'}</div>
+                        <div class="entry-detail"><strong>Breite:</strong> ${entry.breite ? entry.breite + ' mm' : '-'}</div>
                         <div class="entry-detail"><strong>Stück:</strong> ${entry.stueck || '-'}</div>
                         <div class="entry-detail"><strong>Quadratmeter:</strong> ${entry.quadratmeter} m²</div>
                         <div class="entry-detail"><strong>Kubikmeter:</strong> ${entry.kubikmeter} m³</div>

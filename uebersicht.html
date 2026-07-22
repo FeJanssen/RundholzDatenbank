@@ -159,8 +159,25 @@
             background: #555;
         }
 
+        .export-btn {
+            position: fixed;
+            top: 70px;
+            right: 20px;
+            padding: 12px 24px;
+            background: #228B22;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+        }
+
+        .export-btn:hover {
+            background: #1a6b1a;
+        }
+
         @media print {
-            .print-btn, .filter-section {
+            .print-btn, .filter-section, .export-btn {
                 display: none;
             }
         }
@@ -175,6 +192,7 @@
 </head>
 <body>
     <button class="print-btn" onclick="window.print()">🖨️ Drucken</button>
+    <button class="export-btn" onclick="exportToCSV()">📥 CSV Export</button>
 
     <div class="container">
         <div class="header">
@@ -226,6 +244,8 @@
         const { createClient } = window.supabase;
         const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+        let currentData = []; // Aktuelle Daten für Export
+
         async function loadData() {
             const stammnummerSuche = document.getElementById('stammnummerSuche').value;
             const datumVon = document.getElementById('datumVon').value;
@@ -272,6 +292,7 @@
             const datumBisDisplay = datumBis || 'Heute';
             document.getElementById('schnittdatum').textContent = `Schnittdatum: ${datumVonDisplay} bis ${datumBisDisplay}`;
 
+            currentData = data; // Daten für Export speichern
             buildTable(data);
             document.getElementById('dataTable').style.display = 'table';
         }
@@ -407,6 +428,141 @@
 
             traverse(obj);
             return totals;
+        }
+
+        function exportToCSV() {
+            if (!currentData || currentData.length === 0) {
+                alert('Keine Daten zum Exportieren vorhanden. Bitte zuerst Daten laden.');
+                return;
+            }
+
+            // Gruppierung nach Stamm -> Paketnummer
+            const grouped = {};
+
+            currentData.forEach(entry => {
+                const stamm = entry.stammnummer || 'Unbekannt';
+                const paket = entry.paketnummer || 'Ohne Paketnummer';
+
+                if (!grouped[stamm]) {
+                    grouped[stamm] = {};
+                }
+
+                if (!grouped[stamm][paket]) {
+                    grouped[stamm][paket] = {
+                        entries: [],
+                        totalKubikmeter: 0,
+                        totalQuadratmeter: 0,
+                        totalStueck: 0,
+                        totalLaenge: 0,
+                        totalBreite: 0,
+                        totalStaerke: 0
+                    };
+                }
+
+                grouped[stamm][paket].entries.push(entry);
+                grouped[stamm][paket].totalKubikmeter += parseFloat(entry.kubikmeter) || 0;
+                grouped[stamm][paket].totalQuadratmeter += parseFloat(entry.quadratmeter) || 0;
+                grouped[stamm][paket].totalStueck += parseInt(entry.stueck) || 0;
+                grouped[stamm][paket].totalLaenge += parseFloat(entry.laenge) || 0;
+                grouped[stamm][paket].totalBreite += parseFloat(entry.breite) || 0;
+                grouped[stamm][paket].totalStaerke += parseFloat(entry.staerke) || 0;
+            });
+
+            // CSV erstellen mit den spezifizierten Feldern
+            const headers = ['lot_length', 'width', 'thickness', 'lot_name', 'Holzart', 'Sortierung', 'product_id', 'units'];
+            let csvContent = headers.join(';') + '\n';
+
+            // Zeilen erstellen
+            for (const stamm in grouped) {
+                for (const paket in grouped[stamm]) {
+                    const group = grouped[stamm][paket];
+                    const count = group.entries.length;
+                    
+                    // Durchschnitte für Länge, Breite, Stärke berechnen (mit Punkt als Dezimaltrennzeichen)
+                    const avgLaenge = count > 0 ? (group.totalLaenge / count).toFixed(2) : '0.00';
+                    const avgBreite = count > 0 ? (group.totalBreite / count).toFixed(2) : '0.00';
+                    const avgStaerke = count > 0 ? (group.totalStaerke / count).toFixed(2) : '0.00';
+                    
+                    // Alle Kategorien, Holzarten und Qualitäten sammeln und die häufigste verwenden
+                    const kategorien = {};
+                    const holzarten = {};
+                    const qualitaeten = {};
+                    
+                    group.entries.forEach(entry => {
+                        const kat = entry.kategorie || '';
+                        const hol = entry.holzart || '';
+                        const qual = entry.qualitaet || '';
+                        kategorien[kat] = (kategorien[kat] || 0) + 1;
+                        holzarten[hol] = (holzarten[hol] || 0) + 1;
+                        qualitaeten[qual] = (qualitaeten[qual] || 0) + 1;
+                    });
+                    
+                    // Die häufigste Kategorie, Holzart und Qualität nehmen
+                    const kategorie = Object.keys(kategorien).reduce((a, b) => kategorien[a] > kategorien[b] ? a : b, '');
+                    const holzart = Object.keys(holzarten).reduce((a, b) => holzarten[a] > holzarten[b] ? a : b, '');
+                    const qualitaet = Object.keys(qualitaeten).reduce((a, b) => qualitaeten[a] > qualitaeten[b] ? a : b, '');
+
+                    // Holzart-Abkürzung erstellen
+                    const holzartMap = {
+                        'Eiche': 'EI',
+                        'Buche': 'BU',
+                        'Esche': 'ES',
+                        'Ahorn': 'AH',
+                        'Kirsche': 'KI',
+                        'Nussbaum': 'NU',
+                        'Birke': 'BI',
+                        'Lärche': 'LA',
+                        'Douglasie': 'DO',
+                        'Kiefer': 'KF'
+                    };
+                    const holzartAbk = holzartMap[holzart] || holzart.substring(0, 2).toUpperCase();
+
+                    // Stärke ohne Dezimalstellen für product_id
+                    const staerkeGerundet = count > 0 ? Math.round(group.totalStaerke / count) : 0;
+
+                    // product_id erstellen basierend auf Kategorie
+                    let productId = '';
+                    if (kategorie === 'SH') {
+                        // SH: SH-Holzart-Qualität
+                        productId = `SH-${holzartAbk}-${qualitaet}`;
+                    } else if (kategorie === 'SF') {
+                        // SF: SF-Holzart-Qualität-Stärke (ohne Dezimalstellen)
+                        productId = `SF-${holzartAbk}-${qualitaet}-${staerkeGerundet}`;
+                    } else {
+                        // Fallback für andere Kategorien
+                        productId = stamm;
+                    }
+
+                    // Units: Für alle Kategorien die Stückzahl
+                    const units = group.totalStueck;
+
+                    const row = [
+                        avgLaenge,           // lot_length (Durchschnitt Länge in m)
+                        avgBreite,           // width (Durchschnitt Breite in mm)
+                        avgStaerke,          // thickness (Durchschnitt Stärke in mm)
+                        paket,               // lot_name (Paketnummer)
+                        holzart,             // Holzart
+                        kategorie,           // Sortierung (Kategorie)
+                        productId,           // product_id (formatiert nach Kategorie)
+                        units                // units (Stückzahl für alle)
+                    ];
+
+                    csvContent += row.join(';') + '\n';
+                }
+            }
+
+            // CSV-Datei herunterladen
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            
+            const today = new Date().toISOString().split('T')[0];
+            link.setAttribute('href', url);
+            link.setAttribute('download', `aufmassliste_${today}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
 
         window.addEventListener('DOMContentLoaded', loadData);
