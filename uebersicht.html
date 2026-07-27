@@ -469,7 +469,7 @@
             });
 
             // CSV erstellen mit den spezifizierten Feldern
-            const headers = ['lot_length', 'width', 'thickness', 'lot_name', 'Holzart', 'Sortierung', 'product_id', 'units'];
+            const headers = ['lot_length', 'width', 'thickness', 'lot_name', 'Holzart', 'Sortierung', 'product_id', 'units', 'ausbuchen'];
             let csvContent = headers.join(';') + '\n';
 
             // Zeilen erstellen
@@ -537,14 +537,15 @@
                     const units = group.totalStueck;
 
                     const row = [
-                        avgLaenge,           // lot_length (Durchschnitt Länge in m)
-                        avgBreite,           // width (Durchschnitt Breite in mm)
-                        avgStaerke,          // thickness (Durchschnitt Stärke in mm)
+                        `\t${avgLaenge}`,    // lot_length (Durchschnitt Länge in m) - Tab für Excel-Textformat
+                        `\t${avgBreite}`,    // width (Durchschnitt Breite in mm) - Tab für Excel-Textformat
+                        `\t${avgStaerke}`,   // thickness (Durchschnitt Stärke in mm) - Tab für Excel-Textformat
                         paket,               // lot_name (Paketnummer)
                         holzart,             // Holzart
                         kategorie,           // Sortierung (Kategorie)
                         productId,           // product_id (formatiert nach Kategorie)
-                        units                // units (Stückzahl für alle)
+                        units,               // units (Stückzahl für alle)
+                        stamm                // ausbuchen (Stammnummer)
                     ];
 
                     csvContent += row.join(';') + '\n';
